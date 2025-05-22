@@ -55,7 +55,7 @@ def destroy(id, db=Depends(get_db)):
         synchronize_session=False
     )
     db.commit()
-    return 'done'
+    return {'details':'Blog deletado com sucesso'}
 
 
 @app.put('/blog/{id}', status_code=status.HTTP_202_ACCEPTED, tags=["Blogs"])
@@ -69,7 +69,7 @@ def update(id, request: schemas.Blog, db=Depends(get_db)):
         request.model_dump(exclude_unset=True)
     )
     db.commit()
-    return 'update'
+    return {'details':'Blog atualizado com sucesso'}
 
 
 @app.post('/user',status_code=status.HTTP_201_CREATED, response_model=schemas.ShowUser, tags=["Users"])
@@ -102,3 +102,16 @@ def show(id, response:Response, db=Depends(get_db)):
         )
     return user_query
 
+@app.put('/user/{id}', status_code=status.HTTP_202_ACCEPTED, tags=["Users"])
+def update(id, request: schemas.User, db=Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == id)
+
+    if not user.first():
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    user.update(
+        request.model_dump(exclude_unset=True)
+    )
+
+    db.commit()
+    return {'details':'Usuário atualizado com sucesso'}
