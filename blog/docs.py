@@ -1,5 +1,9 @@
 tags_metadata = [
     {
+        "name": "Authentication",
+        "description": "Autenticação de login",
+    },
+    {
         "name": "Blogs",
         "description": "Primeiro contato com fastapi",
     },

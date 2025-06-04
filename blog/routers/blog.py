@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, status, Depends, Response,HTTPException
+from fastapi import APIRouter, status, Depends, Response, HTTPException
 from sqlalchemy.orm import Session
 from .. import schemas, database, models
 from ..services import blog
@@ -37,13 +37,8 @@ def create(request: schemas.Blog, db: Session = Depends(get_db)):
     status_code=status.HTTP_200_OK,
     response_model=schemas.ShowBlog
 )
-def show(id, response:Response, db: Session = Depends(get_db)):
-    blog_query = db.query(models.Blog).filter(models.Blog.id == id).first()
-    if not blog_query:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Blog with the id {id} is not available'
-        )
+def show(id:int, response:Response, db: Session = Depends(get_db)):
+    blog_query = blog.show(id, db)
     return blog_query
 
 
@@ -51,7 +46,7 @@ def show(id, response:Response, db: Session = Depends(get_db)):
     '/{id}',
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def destroy(id, db: Session = Depends(get_db)):
+def destroy(id:int, db: Session = Depends(get_db)):
     blog_query = blog.destroy(id, db)
 
     return blog_query
@@ -61,15 +56,7 @@ def destroy(id, db: Session = Depends(get_db)):
     '/{id}',
     status_code=status.HTTP_202_ACCEPTED,
 )
-def update(id, request: schemas.Blog, db: Session = Depends(get_db)):
-    blog_query = db.query(models.Blog).filter(models.Blog.id == id)
-
-    if not blog_query.first():
-        raise HTTPException(status_code=404, detail="Blog não encontrado")
-
-    blog_query.update(
-        request.model_dump(exclude_unset=True)
-    )
-    db.commit()
-    return {'details':'Blog atualizado com sucesso'}
+def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
+    blog_query = blog.update(id, request, db)
+    return blog_query
 

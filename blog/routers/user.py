@@ -1,6 +1,8 @@
 from typing import List
-from fastapi import APIRouter, status, Depends, Response
+from fastapi import APIRouter, status, Depends, Response, HTTPException
+from sqlalchemy.orm import Session
 from .. import schemas, database, models
+from ..services import user
 
 
 router = APIRouter(
@@ -18,17 +20,8 @@ get_db = database.get_db
     response_model=schemas.ShowUser,
     
 )
-def create_user(request: schemas.User, db=Depends(get_db)):
-    hashedPassword = hashing.Hash.encrypt(request.password)
-    new_user = models.User(
-        name=request.name,
-        email=request.email,
-        password=hashedPassword
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+def create_user(request: schemas.User, db: Session = Depends(get_db)):
+    return user.create(request, db)
 
 
 @router.get(
@@ -37,9 +30,8 @@ def create_user(request: schemas.User, db=Depends(get_db)):
     response_model=List[schemas.ShowUser],
     
 )
-def all(db=Depends(database.get_db)):
-    users = db.query(models.User).all()
-    return users
+def all(db=Depends(get_db)):
+    return user.get_all(db)
 
 
 @router.get(
@@ -48,29 +40,14 @@ def all(db=Depends(database.get_db)):
     response_model=schemas.ShowUser,
     
 )
-def show(id, response:Response, db=Depends(get_db)):
-    user_query = db.query(models.User).filter(models.User.id == id).first()
-    if not user_query:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'User with the id {id} is not available'
-        )
-    return user_query
+def show(id: int, response: Response, db: Session = Depends(get_db)):
+    return user.show(id, response, db)
 
 @router.put(
     '/{id}',
     status_code=status.HTTP_202_ACCEPTED,
     
 )
-def update(id, request: schemas.User, db=Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == id)
-
-    if not user.first():
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
-    user.update(
-        request.model_dump(exclude_unset=True)
-    )
-
-    db.commit()
-    return {'details':'Usuário atualizado com sucesso'}
+def update(id: int, request: schemas.User, db: Session = Depends(get_db)):
+    
+    return user.update(id, request, db)
